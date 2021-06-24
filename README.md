@@ -1,2 +1,2 @@
 # Pharma_SupplyChain_Blockchain
-Demonstrate the power of Blockchain to trace &amp; provide transparency in Pharmaceutical Supply Chain domain.
+Demonstrate the power of Blockchain to achieve tracebility, transparency & authenticity of medicines in Pharmaceutical Supply Chain domain.
