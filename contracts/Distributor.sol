@@ -12,7 +12,7 @@ contract Distributor is User {
     mapping(address => address) MedicineBatchTxToPharmaContract; // Track each transaction happened between Dist to Pharma w.r.t to Medicine transferred.
 
     modifier onlyDistributor {
-        require(UsersDetails[msg.sender].userRole == roles.distributer, "ODCC"); //"Only Distributor can call this function."
+        require(UsersDetails[msg.sender].userRole == roles.distributor, "ODCC"); //"Only Distributor can call this function."
         _;
     }
 
