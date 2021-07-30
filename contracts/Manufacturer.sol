@@ -7,16 +7,11 @@ import "./RawMaterials.sol";
 import "./Medicine.sol";
 
 contract Manufacturer is User {
-    mapping(address => address[]) RawMaterialPackagesReceivedAtManufacturer;
     mapping(address => address[]) MedicinesManufactured;
+    mapping(address => address[]) MedicineBatchShipmentList;
+    address[] public TotalMedicineBatchesShipped;
 
-    //Event
-    event MedicinePackageInitialize(
-        address indexed MedicineID,
-        address indexed Manufacturer,
-        address Distributor,
-        address indexed Transporter
-    );
+    event MedicinePackageInitialize(address indexed MedicineID);
 
     modifier onlyManufacturer {
         require(
@@ -28,41 +23,10 @@ contract Manufacturer is User {
 
     //Recieve & update raw material package shippment status for supplied package ID by tagged/associated receiver/manufacturer. Update RawMaterialPackagesReceivedAtManufacturer mapping
     //@param _packageID Material/Package/batch ID Address
-    function updateRecievedRawMaterialPackageStatus(address _packageID)
-        public
-        onlyManufacturer
+    function updateRecievedRawMaterialPackageStatus(address _materialId)
+        private
     {
-        RawMaterials(_packageID).UpdatePackageStatusOnReceived(msg.sender);
-        RawMaterialPackagesReceivedAtManufacturer[msg.sender].push(_packageID);
-    }
-
-    //Retrieve material/package shippment status using packageID. Only Manufacturer can call this.
-    //@param _packageID Address
-    function getReceivedRawMaterialPackageAtManufacturerStatus(
-        address _packageID
-    ) public view returns (uint256) {
-        return RawMaterials(_packageID).getRawMaterialsStatus();
-    }
-
-    //Retrieve number of raw material packages received to particular manufacturer. Only Manufacturer can call this.
-    function getReceivedRawMaterialPackagesCount()
-        public
-        view
-        onlyManufacturer
-        returns (uint256)
-    {
-        return RawMaterialPackagesReceivedAtManufacturer[msg.sender].length;
-    }
-
-    //Retrieve raw material/package ID using index registered by Manufacturer. Only Manufacturer can call this.
-    //@param _index Uint
-    function getReceivedRawMaterialPackageIDByIndex(uint256 _index)
-        public
-        view
-        onlyManufacturer
-        returns (address)
-    {
-        return RawMaterialPackagesReceivedAtManufacturer[msg.sender][_index];
+        RawMaterials(_materialId).UpdatePackageStatusOnReceived();
     }
 
     //Initialize Medicine batch with required details, transporter & distributor. Emit event with new package details.
@@ -73,22 +37,21 @@ contract Manufacturer is User {
     //@param _transporter Transporter/Shipper Address
     //@param _distributor Reciever/Distributor Address
     function createMedicinePackage(
-        address _materialID,
+        address _materialId,
         string memory _medicineName,
+        string memory _location,
         string memory _desc,
         uint256 _quantity,
         address _transporter,
         address _distributor
     ) public onlyManufacturer {
-       require(
-            UsersDetails[_transporter].userRole == roles.transporter,
-            "TRANS_NT_REG"
-        ); //Only Registered Transporter/Shipper is allowed.
+        updateRecievedRawMaterialPackageStatus(_materialId);
         Medicine medicineData = new Medicine(
             msg.sender,
-            _materialID,
+            _materialId,
             _desc,
             _medicineName,
+            _location,
             _quantity,
             _transporter,
             _distributor
@@ -98,43 +61,44 @@ contract Manufacturer is User {
         //Push medicine address to list registered by manudacturer
         MedicinesManufactured[msg.sender].push(address(medicineData));
         //Emit event after medicine registration
-        emit MedicinePackageInitialize(
-            _medicineID,
-            msg.sender,
-            _distributor,
-            _transporter
+        emit MedicinePackageInitialize(_medicineID);
+    }
+
+    function updateMedicineBatch(
+        address _medicineID,
+        string memory _medicineName,
+        string memory _location,
+        string memory _desc,
+        uint256 _quantity,
+        address _transporter,
+        address _distributor
+    ) public onlyManufacturer {
+        Medicine(_medicineID).updateMedicineBatchDetails(
+            _medicineName,
+            _desc,
+            _location,
+            _quantity,
+            _transporter,
+            _distributor
         );
     }
 
-    //Retrieve number of medicine packages registered by manufacturer. Only manufacturer can call this.
-    function getRegisteredMedicinePackagesCount()
+    //Load & ship medicine batch from manufacturer to ditributor. Only manufacturer call this.
+    function loadAndShipMedicineBatch(address _medicineID, address _distributor)
         public
-        view
         onlyManufacturer
-        returns (uint256)
     {
-        return MedicinesManufactured[msg.sender].length;
+        Medicine(_medicineID).pickMedicinePackageForDistributor();
+        if (Medicine(_medicineID).getMedicineStatus() == 1) {
+            MedicineBatchShipmentList[_distributor].push(_medicineID);
+        }
     }
 
-    //Retrieve medicine ID using index registered by manufacturer. Only manufacturer can call this.
-    //@param index Uint
-    function getRegisteredMedicineIDByIndex(uint256 index)
+    function getTotalMedicineBatchesShippedCount(address _distributor)
         public
         view
-        onlyManufacturer
-        returns (address)
-    {
-        return MedicinesManufactured[msg.sender][index];
-    }
-
-    //Retrieve medicine package status using package/medicine ID. Only manufacturer can call this.
-    //@param _packageID Address
-    function getRegisteredMedicinePackageStatusByID(address _medicineID)
-        public
-        view
-        onlyManufacturer
         returns (uint256)
     {
-        return Medicine(_medicineID).getMedicineStatus();
+        return MedicineBatchShipmentList[_distributor].length;
     }
 }

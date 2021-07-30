@@ -40,8 +40,8 @@ module.exports = {
       network_id: "*",
       port: 8545,
       host: "127.0.0.1",
-      gas: 8500000,
-      timeoutBlocks: 200
+      timeoutBlocks: 200,
+      skipDryRun: true
     }
     // Useful for testing. The `development` name is special - truffle uses it by default
     // if it's defined here and no other network is specified at the command line.
@@ -94,7 +94,7 @@ module.exports = {
       settings: {          // See the solidity docs for advice about optimization and evmVersion
        optimizer: {
          enabled: true,
-         runs: 1
+         runs: 200
        },
        evmVersion: "byzantium"
       }
