@@ -6,7 +6,8 @@ import "./User.sol";
 import "./RawMaterials.sol";
 
 contract Supplier is User {
-    mapping(address => address[]) SupplierRegisteredRawMaterialList;
+    mapping(address => address[]) public SupplierRegisteredRawMaterialList;
+    mapping(address => address[]) public MaterialShipmentList;
 
     //Event
     event RawMaterialInitialize(
@@ -17,10 +18,7 @@ contract Supplier is User {
     );
 
     modifier onlySupplier {
-        require(
-            UsersDetails[msg.sender].userRole == roles.supplier,
-            "ORMSCC"
-        );//Only Supplier can call this function.
+        require(UsersDetails[msg.sender].userRole == roles.supplier, "ORMSCC"); //Only Supplier can call this function.
         _;
     }
 
@@ -61,52 +59,42 @@ contract Supplier is User {
         );
     }
 
-    //Retrieve number of raw material packages registered by supplier. Only supplier can call this.
-    function getSupplierRegisteredRawMaterialPackageCount()
+    //Update material details for materialid. Only supplier can call this.
+    function updateRawMaterial(
+        address _materialID,
+        string memory _desc,
+        string memory _producerName,
+        string memory _location,
+        uint256 _quantity,
+        address _transporter,
+        address _manufacturer
+    ) public onlySupplier {
+        RawMaterials(_materialID).updateRawMaterialDetails(
+            _desc,
+            _producerName,
+            _location,
+            _quantity,
+            _transporter,
+            _manufacturer
+        );
+    }
+
+    //Load & ship raw material from supplier to manufacturer. Only Supplier call this.
+    function loadAndShipRawMaterialBatch(
+        address _materialID,
+        address _manufacturer
+    ) public onlySupplier {
+        RawMaterials(_materialID).pickRawMaterialPackage();
+        if (RawMaterials(_materialID).getRawMaterialsStatus() == 1) {
+            MaterialShipmentList[_manufacturer].push(_materialID);
+        }
+    }
+
+    function getTotalMaterialPackagesShippedCount(address _manufacturer)
         public
         view
-        onlySupplier
         returns (uint256)
     {
-        return SupplierRegisteredRawMaterialList[msg.sender].length;
-    }
-
-    //Retrieve raw material/package ID using index registered by supplier. Only supplier can call this.
-    //@param index Uint
-    function getSupplierRegisteredRawMaterialIDByIndex(uint256 index)
-        public
-        view
-        onlySupplier
-        returns (address materialID)
-    {
-        return SupplierRegisteredRawMaterialList[msg.sender][index];
-    }
-
-    //Retrieve material/package status using packageID. Only supplier can call this.
-    //@param _packageID Address
-    function getSupplierRegisteredRawMaterialPackageStatus(address _packageID)
-        public
-        view
-        returns (uint256)
-    {
-        return RawMaterials(_packageID).getRawMaterialsStatus();
-    }
-
-    //Retrieve material/package details using packageID. Only supplier can call this.
-    //@param _packageID Address
-    function getSupplierRegisteredRawMaterialByPackageID(address _packageID)
-        public
-        view
-        returns (
-            address,
-            string memory,
-            string memory,
-            string memory,
-            uint256,
-            address,
-            address
-        )
-    {
-        return RawMaterials(_packageID).getSuppliedRawMaterialDetails();
+        return MaterialShipmentList[_manufacturer].length;
     }
 }

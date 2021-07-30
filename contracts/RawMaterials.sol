@@ -28,14 +28,8 @@ contract RawMaterials {
     address supplier;
     //material package status
     status packageStatus;
-
-    event ShippmentUpdate(
-        address indexed BatchId,
-        address indexed Shipper,
-        address indexed Manufacturer,
-        uint256 TransporterType,
-        uint256 Status
-    );
+    //transaction time
+    uint256[] transactionBlocks;
 
     //Initiate new Raw Material package by supplier with necessary details.
     constructor(
@@ -58,16 +52,7 @@ contract RawMaterials {
         supplier = _supplier;
         shipper = _shipper;
         packageStatus = status(0);
-    }
-
-    modifier onlyTransporter {
-        require(msg.sender == shipper, "ORCC"); //"Only tagged shipper/transporter can call this."
-        _;
-    }
-
-    modifier onlyManufacturer {
-        require(msg.sender == manufacturer, "OMCC"); // "Only tagged reciever/manufacturer can call this."
-        _;
+        transactionBlocks.push(block.number);
     }
 
     //Get the Raw material package details initiated using constructor
@@ -75,24 +60,46 @@ contract RawMaterials {
         public
         view
         returns (
+            address _materialId,
             address _supplier,
             string memory _description,
             string memory _producerName,
             string memory _location,
             uint256 _quantity,
             address _shipper,
-            address _receiver
+            address _receiver,
+            uint256 _status,
+            uint256[] memory _transactionBlocks
         )
     {
         return (
+            materialId,
             supplier,
             description,
             producerName,
             location,
             quantity,
             shipper,
-            manufacturer
+            manufacturer,
+            uint256(packageStatus),
+            transactionBlocks
         );
+    }
+
+    function updateRawMaterialDetails(
+        string memory _description,
+        string memory _producerName,
+        string memory _location,
+        uint256 _quantity,
+        address _shipper,
+        address _receiver
+    ) public {
+        description = _description;
+        producerName = _producerName;
+        location = _location;
+        quantity = _quantity;
+        shipper = _shipper;
+        manufacturer = _receiver;
     }
 
     //Get the Raw material package status.
@@ -107,19 +114,17 @@ contract RawMaterials {
 
     //Pick & update raw material package status by tagged/associated shipper/transporter. Emit event with package details.
     //@param _shipper Transporter/Shipper Address
-    function pickRawMaterialPackage(address _shipper) public {
-        require(_shipper == shipper, "OSCC"); //Only tagged shipper can call this.
+    function pickRawMaterialPackage() public {
         require(packageStatus == status(0), "RM_MUST_AT_S"); //Material package must be at producer before shippment
+        transactionBlocks.push(block.number);
         packageStatus = status(1);
-        emit ShippmentUpdate(materialId, _shipper, manufacturer, 1, 1);
     }
 
     //Recieve & update raw material package status by tagged/associated receiver/manufacturer. Emit event with package details.
     //@param _shipper Transporter/Shipper Address
-    function UpdatePackageStatusOnReceived(address _receiver) public {
-        require(_receiver == manufacturer, "ORMCC"); //Only tagged reciever/manufacturer can call this.
+    function UpdatePackageStatusOnReceived() public {
         require(packageStatus == status(1), "RM_MUST_AT_M"); //Material package must be at manufacturer before status update.
+        transactionBlocks.push(block.number);
         packageStatus = status(2);
-        emit ShippmentUpdate(materialId, shipper, _receiver, 1, 2);
     }
 }

@@ -46,29 +46,40 @@ contract MedicineDP {
         packageStatus = status(0);
     }
 
+    function getMedicineDPSubContractDetails()
+        public
+        view
+        returns (
+            address _medicineID,
+            address _shipper,
+            address _distributor,
+            uint256 _packageStatus
+        )
+    {
+        return (medicineID, shipper, distributor, uint256(packageStatus));
+    }
+
     //Pick medicine package/batch for transferring Dist to Pharma by Shipper/Transporter. Only Shipper/Transporter can call this.
     //@param _medicineID Medicine Batch/Package ID Address
     //@param _shipper Registered Shipper/Transporter user Address
-    function pickPackageDP(address _medicineID, address _shipper) public {
-        require(_shipper == shipper, "OSCC"); //Only tagged shipper can call this.
+    function pickPackageDP(address _medicineID) public {
         require(
             packageStatus == status(0),
-            "Medicine package must be at distributor before shippment to pharma."
+            "M_MST_AT_D"
         );
         packageStatus = status(1);
-        Medicine(_medicineID).pickMedicinePackageForPharma(_shipper, pharma);
+        Medicine(_medicineID).pickMedicinePackageForPharma(pharma);
     }
 
     //Receive & Update medicine package/batch for tranfering Dist to Pharma by Shipper/Transporter. Only Pharma can call this.
     //@param _medicineID Medicine Batch/Package ID Address
     //@param _receiver Registered Pharma user Address
-    function receivedPackageDP(address _medicineID, address _receiver) public {
-        require(_receiver == pharma, "ORPCC"); //Only tagged reciever/pharma can call this.
+    function receivedPackageDP(address _medicineID) public {
         require(
             packageStatus == status(1),
-            "Medicine package must be at pharma before status update."
+            "M_MST_AT_P."
         );
         packageStatus = status(2);
-        Medicine(_medicineID).updatePackageStatusOnReceivedByPharma(pharma);
+        Medicine(_medicineID).updatePackageStatusOnReceivedByPharma();
     }
 }
