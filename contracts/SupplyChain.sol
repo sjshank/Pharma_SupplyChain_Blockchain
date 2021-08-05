@@ -94,7 +94,7 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
             address shipper,
             address manufacturer,
             uint256 packageStatus,
-            uint256[] memory transactionDates
+            uint256[] memory transactionBlocks
         )
     {
         return RawMaterials(_materialId).getSuppliedRawMaterialDetails();

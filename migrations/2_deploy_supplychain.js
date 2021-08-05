@@ -40,8 +40,12 @@ module.exports = function (deployer, network, accounts) {
 
 
 
-    await inst.createRawMaterialPackage("package desc", "Saurabh", "Koradi", 250, accounts[9], accounts[3], { from: accounts[2] });
-    await inst.createRawMaterialPackage("package desc", "Guddu", "Nagpur", 350, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 1", "Koradi", 250, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 2", "Nagpur", 350, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 3", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 4", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 5", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 6", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
 
 
 
