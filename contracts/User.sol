@@ -29,6 +29,7 @@ contract User is Owner {
         roles userRole;
         string userStatus;
         bool isDeleted;
+        uint256 registrationDate;
     }
 
     // UserInfo struct array to hold list of registered user
@@ -58,6 +59,7 @@ contract User is Owner {
         newUser.userRole = roles(_role);
         newUser.userStatus = _userStatus;
         newUser.isDeleted = false;
+        newUser.registrationDate = block.timestamp;
         UsersDetails[_address] = newUser;
         //push user into array
         UserList.push(newUser);
@@ -84,6 +86,7 @@ contract User is Owner {
         newUser.userRole = roles(_role);
         newUser.userStatus = _userStatus;
         newUser.isDeleted = false;
+        newUser.registrationDate = block.timestamp;
         UsersDetails[_address] = newUser;
         //push user into array
         UserList.push(newUser);
