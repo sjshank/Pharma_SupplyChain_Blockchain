@@ -13,7 +13,8 @@ contract User is Owner {
         distributor,
         pharma,
         revoke,
-        admin
+        admin,
+        inspector
     }
 
     modifier onlyAdmin {

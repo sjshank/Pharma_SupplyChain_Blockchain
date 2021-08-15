@@ -6,12 +6,21 @@ import "./Supplier.sol";
 import "./Manufacturer.sol";
 import "./Distributor.sol";
 import "./Pharma.sol";
+import "./Inspector.sol";
+import "./Transporter.sol";
 import "./User.sol";
 import "./RawMaterials.sol";
 import "./Medicine.sol";
 import "./MedicineDP.sol";
 
-contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
+contract SupplyChain is
+    Supplier,
+    Manufacturer,
+    Distributor,
+    Pharma,
+    Inspector,
+    Transporter
+{
     constructor() {}
 
     /*************** USER SECTION ***************************** */
@@ -71,12 +80,84 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
 
     //Retrieve list of registered raw material addresses for supplier address. Only supplier can call this.
     //@param _address Address
-    function getListOfRegisteredRawMateriaAddress(address _address)
+    function getListOfRegisteredRawMateriaAddress(address _supplier)
         public
         view
         returns (address[] memory)
     {
-        return SupplierRegisteredRawMaterialList[_address];
+        return SupplierRegisteredRawMaterialList[_supplier];
+    }
+
+    //get list of material tagged to associated inspector
+    function getTaggedInspectorMaterialList(address _inspector)
+        public
+        view
+        returns (address[] memory)
+    {
+        return TaggedInspectorMaterialList[_inspector];
+    }
+
+    //get list of material tagged to associated shipper
+    function getTaggedTransporterMaterialList(address _transporter)
+        public
+        view
+        returns (address[] memory)
+    {
+        return TaggedTransporterMaterialList[_transporter];
+    }
+
+    //get list of material tagged to associated manufacturer
+    function getTaggedManufacturerMaterialList(address _manufacturer)
+        public
+        view
+        returns (address[] memory)
+    {
+        return ManufacturerTaggedMaterialList[_manufacturer];
+    }
+
+    //get list of medicine tagged to associated inspector
+    function getTaggedInspectorMedicineList(address _inspector)
+        public
+        view
+        returns (address[] memory)
+    {
+        return TaggedInspectorMedicineList[_inspector];
+    }
+
+    //get list of medicine tagged to associated shipper
+    function getTaggedTransporterMedicineList(address _transporter)
+        public
+        view
+        returns (address[] memory)
+    {
+        return TaggedTransporterMedicineList[_transporter];
+    }
+
+    //get list of medicine tagged to associated distributor
+    function getDistributorTaggedMedicineList(address _distributor)
+        public
+        view
+        returns (address[] memory)
+    {
+        return DistributorTaggedMedicineList[_distributor];
+    }
+
+    //get list of medicine sub batch tagged to associated transporter
+    function getTransporterTaggedMedicineSubBatchList(address _transporter)
+        public
+        view
+        returns (address[] memory)
+    {
+        return TaggedTransporterMedicineSubBatchList[_transporter];
+    }
+
+    //get list of medicine sub batch tagged to associated pharma
+    function getPharmaTaggedMedicineSubBatchList(address _pharma)
+        public
+        view
+        returns (address[] memory)
+    {
+        return PharmaTaggedMedicineSubBatchList[_pharma];
     }
 
     //Retrieve registered raw material details for material id. Only supplier can call this.
@@ -94,7 +175,8 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
             address shipper,
             address manufacturer,
             uint256 packageStatus,
-            uint256[] memory transactionBlocks
+            uint256[] memory transactionBlocks,
+            address inspector
         )
     {
         return RawMaterials(_materialId).getSuppliedRawMaterialDetails();
@@ -130,14 +212,12 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
         view
         returns (
             address medicineId,
-            address manufacturer,
-            string memory description,
             string memory medicineName,
+            string memory description,
             string memory location,
+            Medicine.Entity memory medicineEntity,
             address materialId,
             uint256 quantity,
-            address shipper,
-            address distributor,
             uint256 packageStatus,
             uint256[] memory transactionBlocks
         )
@@ -145,26 +225,17 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
         return Medicine(_batchId).getManufacteredMedicineDetails();
     }
 
-    //Get all the shipped medicine list for distributor
-    function getAllShippedMedicineList(address _distributor)
-        public
-        view
-        returns (address[] memory)
-    {
-        return MedicineBatchShipmentList[_distributor];
-    }
-
     /*************** MANUFACTURER SECTION ***************************** */
 
     /*************** DISTRIBUTOR SECTION ***************************** */
 
     //Get list of medicine bacthes transferred to pharma by distributor
-    function getAllTransferredMedicineBatches(address _pharma)
+    function getAllTransferredMedicineBatches(address _distributor)
         public
         view
         returns (address[] memory)
     {
-        return MedicineBatchesTransferredToPharma[_pharma];
+        return MedicineBatchesTransferred[_distributor];
     }
 
     //Get sub contract details generated while transferring medicine batch from dist tot pharma
@@ -172,26 +243,16 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
         public
         view
         returns (
+            address medicineSubContract,
             address medicineId,
-            address shipper,
-            address distributor,
+            Medicine.MedicineInfo memory medicineInfo,
+            Medicine.Entity memory medicineEntity,
+            address pharma,
             uint256 packageStatus,
-            uint256 medicineStatus
+            uint256[] memory transactionBlocksDP
         )
     {
-        (
-            address _medicineId,
-            address _shipper,
-            address _distributor,
-            uint256 _packageStatus
-        ) = MedicineDP(_subContractId).getMedicineDPSubContractDetails();
-        return (
-            _medicineId,
-            _shipper,
-            _distributor,
-            _packageStatus,
-            uint256(MedicineSaleStatusAtPharma[_medicineId])
-        );
+        return MedicineDP(_subContractId).getMedicineDPSubContractDetails();
     }
 
     /*************** DISTRIBUTOR SECTION ***************************** */
@@ -199,12 +260,12 @@ contract SupplyChain is Supplier, Manufacturer, Distributor, Pharma {
     /*************** PHARMA SECTION ***************************** */
 
     //Retrieve medicine sale status updated by pharma for supplied medicineID.
-    function getMedicineSaleStatusByID(address _medicineID)
+    function getMedicineSaleStatusByID(address _subContractId)
         public
         view
         returns (uint256)
     {
-        return uint256(MedicineSaleStatusAtPharma[_medicineID]);
+        return uint256(MedicineSaleStatusAtPharma[_subContractId]);
     }
 
     /*************** PHARMA SECTION ***************************** */
