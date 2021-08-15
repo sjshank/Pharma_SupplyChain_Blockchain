@@ -13,68 +13,75 @@ contract Medicine {
     address owner;
 
     enum status {
-        atManufacturer,
+        medicineRegistered,
+        sentForInspection,
+        rejectedByInspector,
+        sentForShipment,
         pickedForDistributor,
         deliveredAtDistributor,
-        pickedForPharma,
-        deliveredAtPharma
+        rejectedByDistributor,
+        approvedByDistributor
     }
 
-    //Medicine id
-    address public medicineId;
-    //Medicine description
-    string description;
-    //Medicine name
-    string medicineName;
-    //Medicine manufacturing unit location
-    string location;
-    //Medicine quantity
-    uint256 quantity;
+    struct MedicineInfo {
+        //Medicine id
+        address medicineId;
+        //Medicine name
+        string medicineName;
+        //Medicine description
+        string description;
+        //Medicine manufacturing unit location
+        string location;
+        //Medicine quantity
+        uint256 quantity;
+    }
+
+    struct Entity {
+        //Medicine shipper/transporter
+        address shipper;
+        //Medicine distributor
+        address distributor;
+        //Medicine manufacturer/manufacturer
+        address manufacturer;
+        //quality checker
+        address inspector;
+    }
+
     //Raw Material information used for creating medicine
     address materialId;
-    //Medicine shipper/transporter
-    address shipper;
-    //Medicine distributor
-    address distributor;
-    //Medicine at Pharmaceutical
-    address pharma;
-    //Medicine manufacturer/manufacturer
-    address manufacturer;
     //medicine package status
     status public packageStatus;
     //transaction time
     uint256[] transactionBlocks;
-
-    // event ShippmentUpdate(
-    //     address indexed BatchId,
-    //     address indexed Shipper,
-    //     address indexed Manufacturer,
-    //     uint256 TransporterType,
-    //     uint256 Status
-    // );
+    //Different entities
+    Entity entity;
+    //Medicine details
+    MedicineInfo medicineInfo;
+    //Medicine at Pharmaceutical
+    address pharma;
 
     //Initiate new Medicine package by manufacturer with necessary details.
     constructor(
         address _manufacturer,
         address _materialId,
-        string memory _description,
         string memory _medicineName,
+        string memory _description,
         string memory _location,
         uint256 _quantity,
-        address _shipper,
-        address _receiver
+        address _transporter,
+        address _distributor,
+        address _inspector
     ) {
-        owner = _manufacturer;
         materialId = _materialId;
-        medicineId = address(this);
-        description = _description;
-        medicineName = _medicineName;
-        location = _location;
-        quantity = _quantity;
-        shipper = _shipper;
-        distributor = _receiver;
-        manufacturer = _manufacturer;
-        shipper = _shipper;
+        medicineInfo.medicineId = address(this);
+        medicineInfo.medicineName = _medicineName;
+        medicineInfo.description = _description;
+        medicineInfo.location = _location;
+        medicineInfo.quantity = _quantity;
+        entity.shipper = _transporter;
+        entity.distributor = _distributor;
+        entity.manufacturer = _manufacturer;
+        entity.inspector = _inspector;
         packageStatus = status(0);
         transactionBlocks.push(block.number);
     }
@@ -85,28 +92,25 @@ contract Medicine {
         view
         returns (
             address _medicineId,
-            address _manufacturer,
-            string memory _description,
+            // MedicineInfo memory _medicineInfo,
             string memory _medicineName,
+            string memory _description,
             string memory _location,
+            Entity memory _entity,
             address _materialId,
             uint256 _quantity,
-            address _shipper,
-            address _distributor,
             uint256 _status,
             uint256[] memory _transactionBlocks
         )
     {
         return (
-            medicineId,
-            manufacturer,
-            description,
-            medicineName,
-            location,
+            medicineInfo.medicineId,
+            medicineInfo.medicineName,
+            medicineInfo.description,
+            medicineInfo.location,
+            entity,
             materialId,
-            quantity,
-            shipper,
-            distributor,
+            medicineInfo.quantity,
             uint256(packageStatus),
             transactionBlocks
         );
@@ -119,23 +123,44 @@ contract Medicine {
         uint256 _quantity,
         address _shipper,
         address _receiver
-    ) public {
-        description = _description;
-        medicineName = _medicineName;
-        location = _location;
-        quantity = _quantity;
-        shipper = _shipper;
-        distributor = _receiver;
+    ) public returns (bool) {
+        medicineInfo.medicineName = _medicineName;
+        medicineInfo.description = _description;
+        medicineInfo.location = _location;
+        medicineInfo.quantity = _quantity;
+        entity.shipper = _shipper;
+        entity.distributor = _receiver;
+        return true;
+    }
+
+    //get medicine info
+    function getMedicineInfo() public view returns (MedicineInfo memory) {
+        return medicineInfo;
+    }
+
+    //get medicine entity
+    function getMedicineEntity() public view returns (Entity memory) {
+        return entity;
     }
 
     //Get the Medicine/batch ID.
     function getMedicineID() public view returns (address) {
-        return medicineId;
+        return medicineInfo.medicineId;
+    }
+
+    //Get the Material/batch ID.
+    function getMaterialID() public view returns (address) {
+        return materialId;
     }
 
     //Get the Medicine package status.
     function getMedicineStatus() public view returns (uint256) {
         return uint256(packageStatus);
+    }
+
+    //Get the Medicine package status.
+    function getTransactionBlocks() public view returns (uint256[] memory) {
+        return transactionBlocks;
     }
 
     /************************************************************************* MANUFACTURER TO DISTRIBUTOR SHIPPMENT *************************************************************************/
@@ -181,5 +206,53 @@ contract Medicine {
         transactionBlocks.push(block.number);
         packageStatus = status(4);
         // emit ShippmentUpdate(materialId, shipper, _receiver, 3, 4);
+    }
+
+    //send medicine for inspection
+    function sendMedicineForInspection() public returns (bool) {
+        return updateMedicineBatchStatus(1, 0);
+    }
+
+    //Reject medicine by inspector
+    function rejectMedicineAtInspection() public returns (bool) {
+        return updateMedicineBatchStatus(2, 1);
+    }
+
+    //Approve medicine or send medicine batch for shipment to transporter by inspector
+    function approveMedicineAtInspection() public returns (bool) {
+        return updateMedicineBatchStatus(3, 1);
+    }
+
+    //Pick approved medicine batch for shipment by shipper
+    function initiateMedicineBatchForShipment() public returns (bool) {
+        return updateMedicineBatchStatus(4, 3);
+    }
+
+    //Deliver & update medicine batch by shipper
+    function deliverMedicineBatchToReceiver() public returns (bool) {
+        return updateMedicineBatchStatus(5, 4);
+    }
+
+    //Delivered medicine batch rejected by distributor
+    function rejectMedicineBatchAtReceiver() public returns (bool) {
+        return updateMedicineBatchStatus(6, 5);
+    }
+
+    //Delivered medicine batch approved by distributor
+    function approveMedicineBatchAtReceiver() public returns (bool) {
+        return updateMedicineBatchStatus(7, 5);
+    }
+
+    function updateMedicineBatchStatus(
+        uint256 _updatedStatus,
+        uint256 _prevStatus
+    ) private returns (bool) {
+        if (packageStatus == status(_prevStatus)) {
+            transactionBlocks.push(block.number);
+            packageStatus = status(_updatedStatus);
+            return true;
+        } else {
+            revert("IN_PROCESS");
+        }
     }
 }

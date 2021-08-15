@@ -36,16 +36,17 @@ module.exports = function (deployer, network, accounts) {
     await inst.registerUser(accounts[3], 'USER_MANU', 'Koradi', 3, 'Active', { from: accounts[1] });
     await inst.registerUser(accounts[4], 'USER_DIST', 'Nagpur', 5, 'Active', { from: accounts[1] });
     await inst.registerUser(accounts[5], 'USER_PHARMA', 'Mumbai', 6, 'Active', { from: accounts[1] });
+    await inst.registerUser(accounts[6], 'QUALITY_CHECKER', 'Pune', 9, 'Active', { from: accounts[1] });
 
 
 
 
-    await inst.createRawMaterialPackage("package desc", "Material 1", "Koradi", 250, accounts[9], accounts[3], { from: accounts[2] });
-    await inst.createRawMaterialPackage("package desc", "Material 2", "Nagpur", 350, accounts[9], accounts[3], { from: accounts[2] });
-    await inst.createRawMaterialPackage("package desc", "Material 3", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
-    await inst.createRawMaterialPackage("package desc", "Material 4", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
-    await inst.createRawMaterialPackage("package desc", "Material 5", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
-    await inst.createRawMaterialPackage("package desc", "Material 6", "Hyderabad", 350, accounts[9], accounts[3], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 1", "Koradi", 250, accounts[9], accounts[3], accounts[6], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 2", "Nagpur", 350, accounts[9], accounts[3], accounts[6], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 3", "Hyderabad", 350, accounts[9], accounts[3], accounts[6], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 4", "Hyderabad", 350, accounts[9], accounts[3], accounts[6], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 5", "Hyderabad", 350, accounts[9], accounts[3], accounts[6], { from: accounts[2] });
+    await inst.createRawMaterialPackage("package desc", "Material 6", "Hyderabad", 350, accounts[9], accounts[3], accounts[6], { from: accounts[2] });
 
 
 

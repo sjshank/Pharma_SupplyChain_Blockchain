@@ -8,13 +8,24 @@ import "./RawMaterials.sol";
 contract Supplier is User {
     mapping(address => address[]) public SupplierRegisteredRawMaterialList;
     mapping(address => address[]) public MaterialShipmentList;
+    mapping(address => address[]) public TaggedInspectorMaterialList;
 
     //Event
     event RawMaterialInitialize(
-        address indexed MaterialID,
-        address indexed Supplier,
-        address Manufacturer,
-        address indexed Transporter
+        address indexed materialId,
+        address indexed supplier,
+        address manufacturer,
+        address indexed shipper,
+        string producerName,
+        string description,
+        string location,
+        uint256 quantity,
+        address inspector,
+        uint256 packageStatus
+    );
+    event UpdatedRawMaterialPackageStatus(
+        address materialId,
+        uint256 packageStatus
     );
 
     modifier onlySupplier {
@@ -35,7 +46,8 @@ contract Supplier is User {
         string memory _location,
         uint256 _quantity,
         address _transporter,
-        address _manufacturer
+        address _manufacturer,
+        address _inspector
     ) public onlySupplier {
         RawMaterials rawMaterialData = new RawMaterials(
             msg.sender,
@@ -44,32 +56,40 @@ contract Supplier is User {
             _location,
             _quantity,
             _transporter,
-            _manufacturer
+            _manufacturer,
+            _inspector
         );
-        //populate raw material ID
-        address _materialID = rawMaterialData.getRawMaterialID();
         //Push raw material address to list registered by supplier
-        SupplierRegisteredRawMaterialList[msg.sender].push(_materialID);
+        SupplierRegisteredRawMaterialList[msg.sender].push(
+            address(rawMaterialData)
+        );
         //Emit event after raw material registration
         emit RawMaterialInitialize(
-            _materialID,
+            address(rawMaterialData),
             msg.sender,
             _manufacturer,
-            _transporter
+            _transporter,
+            _producerName,
+            _desc,
+            _location,
+            _quantity,
+            _inspector,
+            0
         );
     }
 
     //Update material details for materialid. Only supplier can call this.
     function updateRawMaterial(
-        address _materialID,
+        address _materialId,
         string memory _desc,
         string memory _producerName,
         string memory _location,
         uint256 _quantity,
         address _transporter,
-        address _manufacturer
+        address _manufacturer,
+        address _inspector
     ) public onlySupplier {
-        RawMaterials(_materialID).updateRawMaterialDetails(
+        RawMaterials(_materialId).updateRawMaterialDetails(
             _desc,
             _producerName,
             _location,
@@ -77,16 +97,32 @@ contract Supplier is User {
             _transporter,
             _manufacturer
         );
+        emit RawMaterialInitialize(
+            _materialId,
+            msg.sender,
+            _manufacturer,
+            _transporter,
+            _producerName,
+            _desc,
+            _location,
+            _quantity,
+            _inspector,
+            0
+        );
     }
 
-    //Load & ship raw material from supplier to manufacturer. Only Supplier call this.
-    function loadAndShipRawMaterialBatch(
-        address _materialID,
-        address _manufacturer
+    //Supplier will send package to inspector for inspection
+    function sendMaterialPackageForInspection(
+        address _materialId,
+        address _inspector
     ) public onlySupplier {
-        RawMaterials(_materialID).pickRawMaterialPackage();
-        if (RawMaterials(_materialID).getRawMaterialsStatus() == 1) {
-            MaterialShipmentList[_manufacturer].push(_materialID);
+        bool result = RawMaterials(_materialId).sendPackageForInspection();
+        if (result) {
+            TaggedInspectorMaterialList[_inspector].push(_materialId);
+            emit UpdatedRawMaterialPackageStatus(
+                _materialId,
+                RawMaterials(_materialId).getRawMaterialsStatus()
+            );
         }
     }
 
